@@ -1,0 +1,17 @@
+fastapi
+pydantic
+uvicorn
+sqlmode
+python-jose
+python-multipart
+langchain
+openai
+chromadb
+neo4j
+python-dotenv
+supabase
+passlib
+bcrypt
+psycopg2-binary
+httpx
+python-jose[cryptography]
