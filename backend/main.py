@@ -9,14 +9,16 @@ from app.utils.database import create_db_and_tables
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="Health Reminder API", 
-              description="API for medication reminder and drug interaction alerts",
-              version="0.1.0")
+app = FastAPI(
+    title="Health Reminder API",
+    description="API for medication reminder and drug interaction alerts",
+    version="0.1.0"
+)
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, replace with actual frontend domain
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

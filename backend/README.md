@@ -72,7 +72,7 @@ Sau khi khởi động backend, bạn có thể truy cập:
 - Password: password (được cấu hình trong docker-compose.yml)
 
 ### ChromaDB
-- API Endpoint: http://localhost:8000
+- API Endpoint: http://localhost:8001
 - Persistent Storage: /chroma/chroma (trong container)
 
 ## 🔧 Phát triển
