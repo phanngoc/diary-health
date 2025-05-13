@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, List
+from sqlmodel import SQLModel, Field, Relationship
+from .medication_log import MedicationLogMedication
 
 class MedicationBase(SQLModel):
     name: str
@@ -13,6 +14,10 @@ class Medication(MedicationBase, table=True):
     user_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    logs: List["MedicationLog"] = Relationship(
+        back_populates="medications",
+        link_model=MedicationLogMedication
+    )
 
 class MedicationCreate(MedicationBase):
     pass
