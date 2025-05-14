@@ -8,7 +8,7 @@ load_dotenv()
 
 # Initialize OpenAI client
 openai_api_key = os.getenv("OPENAI_API_KEY")
-model = ChatOpenAI(api_key=openai_api_key, model="gpt-4o")
+model = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini")
 
 # Define the prompt template
 EXTRACT_MEDICATION_PROMPT = """
@@ -24,13 +24,13 @@ User note: {note}
 
 Respond with a JSON object in the following format:
 ```json
-{
+{{
   "medication_name": "name of the medication",
   "dosage": "dosage information",
   "frequency": "how often they take it",
   "taken_at": "when they took it",
   "feeling_after": "any feelings or side effects mentioned"
-}
+}}
 ```
 
 If any information is not provided in the note, use null for that field.

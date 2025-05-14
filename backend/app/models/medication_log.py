@@ -5,8 +5,8 @@ from sqlmodel import SQLModel, Field, Relationship
 
 class MedicationLogBase(SQLModel):
     taken_at: datetime
-    notes: Optional[str] = None
-    feeling_after: Optional[str] = None
+    notes: str | None = None
+    feeling_after: str | None = None
 
 
 class MedicationLogMedication(SQLModel, table=True):
@@ -24,7 +24,7 @@ class MedicationLogMedication(SQLModel, table=True):
 
 class MedicationLog(MedicationLogBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     medications: List["Medication"] = Relationship(
@@ -39,14 +39,14 @@ class MedicationLogCreate(MedicationLogBase):
 
 class MedicationLogRead(MedicationLogBase):
     id: int
-    user_id: int
+    user_id: Optional[int]
     created_at: datetime
     updated_at: datetime
     medications: List["Medication"]
 
 
 class MedicationLogUpdate(SQLModel):
-    taken_at: Optional[datetime] = None
-    notes: Optional[str] = None
-    feeling_after: Optional[str] = None
-    medication_ids: Optional[List[int]] = None 
+    taken_at: datetime | None = None
+    notes: str | None = None
+    feeling_after: str | None = None
+    medication_ids: List[int] | None = None 

@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
+const BASE_URL_API = "http://localhost:8001";
+
 export default function NewMedicationNotePage() {
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState("Hôm nay tôi uống paracetamol 500mg, và cảm thấy đỡ đau đầu hơn ");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<null | {
     medication_name: string;
@@ -30,29 +32,21 @@ export default function NewMedicationNotePage() {
 
     setIsAnalyzing(true);
     try {
-      // Giả lập API call
-      setTimeout(() => {
-        setResult({
-          medication_name: "Paracetamol",
-          dosage: "500mg",
-          frequency: "3 lần/ngày",
-          taken_at: "Sáng nay",
-          feeling_after: "Cảm thấy đỡ đau đầu",
-          saved: true,
-        });
-        setIsAnalyzing(false);
-      }, 1500);
+      const response = await fetch(`${BASE_URL_API}/api/ai/analyze-and-save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note }),
+      });
 
-      // Trong thực tế, bạn sẽ gọi API
-      // const response = await fetch('/api/analyze-note', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ note }),
-      // });
-      // const data = await response.json();
-      // setResult(data);
+      if (!response.ok) {
+        throw new Error('Failed to analyze note');
+      }
+
+      const data = await response.json();
+      setResult(data);
     } catch (error) {
       console.error("Error analyzing note:", error);
+      // TODO: Hiển thị thông báo lỗi cho người dùng
     } finally {
       setIsAnalyzing(false);
     }

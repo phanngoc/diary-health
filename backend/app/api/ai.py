@@ -6,6 +6,7 @@ from app.services.ai_service import extract_medication_info
 from app.utils.database import get_session
 from app.models.medication import Medication, MedicationCreate
 from app.models.medication_log import MedicationLog, MedicationLogCreate
+from datetime import datetime, date
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -15,18 +16,18 @@ class MedicationNoteRequest(BaseModel):
 
 
 class MedicationNoteResponse(BaseModel):
-    medication_name: str = None
-    dosage: str = None
-    frequency: str = None
-    taken_at: str = None
-    feeling_after: str = None
+    medication_name: str | None = None
+    dosage: str | None = None
+    frequency: str | None = None
+    taken_at: str | None = None
+    feeling_after: str | None = None
     saved: bool = False
 
 
 @router.post("/analyze-note", response_model=MedicationNoteResponse)
 async def analyze_medication_note(
     request: MedicationNoteRequest,
-    user_id: str = "test_user",  # Temporary, will be replaced with real authentication
+    user_id: int = 1,  # Temporary, will be replaced with real authentication
     session: Session = Depends(get_session),
 ):
     try:
@@ -50,13 +51,14 @@ async def analyze_medication_note(
 @router.post("/analyze-and-save", response_model=MedicationNoteResponse)
 async def analyze_and_save_medication(
     request: MedicationNoteRequest,
-    user_id: str = "test_user",  # Temporary, will be replaced with real authentication
+    user_id: int = 1,  # Temporary, will be replaced with real authentication
     session: Session = Depends(get_session),
 ):
     try:
+        print('request note:', request.note)
         # Extract information from the note using AI
         extracted_info = await extract_medication_info(request.note)
-        
+        print('extracted_info', extracted_info)
         # Check if we have a medication name
         if not extracted_info.get("medication_name"):
             raise HTTPException(
@@ -78,11 +80,22 @@ async def analyze_and_save_medication(
         session.commit()
         session.refresh(db_medication)
         
+        # Handle taken_at field - convert text like "today" to proper datetime
+        taken_at = extracted_info.get("taken_at")
+        if taken_at:
+            if taken_at.lower() == "today":
+                taken_at = datetime.now().date().isoformat()
+            elif taken_at.lower() == "yesterday":
+                taken_at = (datetime.now().date().replace(day=datetime.now().day-1)).isoformat()
+        else:
+            taken_at = datetime.now().date().isoformat()
+            
         # Create a medication log entry
         medication_log_create = MedicationLogCreate(
-            medication_id=db_medication.id,
+            medication_ids=[db_medication.id],
             notes=request.note,
             feeling_after=extracted_info.get("feeling_after"),
+            taken_at=taken_at,  # Use the processed taken_at value instead of the raw value
         )
         
         # Save the medication log
@@ -94,13 +107,15 @@ async def analyze_and_save_medication(
             medication_name=extracted_info.get("medication_name"),
             dosage=extracted_info.get("dosage"),
             frequency=extracted_info.get("frequency"),
-            taken_at=extracted_info.get("taken_at"),
+            taken_at=taken_at,  # Also use the processed taken_at here
             feeling_after=extracted_info.get("feeling_after"),
             saved=True
         )
         
         return response
-    except HTTPException:
-        raise
+    except HTTPException as e:
+        print('HTTPException', e)
+        raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving medication: {str(e)}") 
+        print('Exception', e)
+        raise HTTPException(status_code=500, detail=f"Error saving medication: {str(e)}")
