@@ -1,0 +1,74 @@
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+
+// Make sure NextAuth config doesn't try to use headers() in a client component
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        console.log("authorize:Credentials:", credentials, process.env.NEXT_PUBLIC_API_URL);
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials?.email || "",
+              password: credentials?.password || "",
+            }),
+          });
+
+          console.log("authorize:res:", await res.json());
+
+          if (!res.ok) {
+            return null;
+          }
+
+          const data = await res.json();
+          
+          // Save token to localStorage on the client side after successful auth
+          if (typeof window !== "undefined") {
+            localStorage.setItem("accessToken", data.access_token);
+          }
+          
+          return {
+            id: data.user.id.toString(),
+            email: data.user.email,
+            name: data.user.full_name,
+            accessToken: data.access_token,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.accessToken = user.accessToken;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.accessToken = token.accessToken as string;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
+  },
+  session: {
+    strategy: "jwt",
+  },
+});

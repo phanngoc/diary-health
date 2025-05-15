@@ -41,4 +41,12 @@ def on_startup():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import sys
+    
+    # Check if --seed flag is provided
+    if len(sys.argv) > 1 and sys.argv[1] == "--seed":
+        from app.seeds.seeder import run_seeders
+        print("Running database seeders...")
+        run_seeders()
+    else:
+        uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
