@@ -31,16 +31,23 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        redirect: true,
+        redirect: false,
       });
 
-      if (result?.error) {
-        toast.error("Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.");
-      } else {
+      console.log("Login result:", result);
+
+      if (result?.ok) {
         toast.success("Đăng nhập thành công!");
         router.push("/medications");
-        router.refresh();
+        // router.refresh();
       }
+      // if (result?.error) {
+      //   toast.error("Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.");
+      // } else {
+      //   toast.success("Đăng nhập thành công!");
+      //   router.push("/medications");
+      //   router.refresh();
+      // }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");

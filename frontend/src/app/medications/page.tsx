@@ -35,7 +35,7 @@ export default function MedicationsPage() {
 
   const fetchMedications = async () => {
     try {
-      const response = await fetch("http://localhost:8001/api/medications", {
+      const response = await fetch("/api/medications", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },

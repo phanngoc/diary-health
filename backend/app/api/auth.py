@@ -21,7 +21,16 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Password verification error: {e}")
+        # Fallback to a direct bcrypt comparison if needed
+        import bcrypt
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'), 
+            hashed_password.encode('utf-8') if isinstance(hashed_password, str) else hashed_password
+        )
 
 def get_password_hash(password):
     return pwd_context.hash(password)
@@ -53,38 +62,6 @@ async def login_for_access_token(
         )
     
     user = await authenticate_user(email, password, session)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id)}, expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name
-        }
-    }
-
-# Add a dedicated JSON endpoint for login
-@router.post("/json-token")
-async def login_with_json(
-    credentials: LoginCredentials,
-    session: Session = Depends(get_session)
-):
-    print("login_with_json called")
-    print("JSON data:", credentials)
-    
-    user = await authenticate_user(credentials.email, credentials.password, session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

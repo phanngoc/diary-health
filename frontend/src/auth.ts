@@ -11,7 +11,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        console.log("authorize:Credentials:", credentials, process.env.NEXT_PUBLIC_API_URL);
         try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/token`, {
             method: "POST",
@@ -22,24 +21,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
 
-          console.log("authorize:res:", await res.json());
+          const result = await res.json();
 
-          if (!res.ok) {
-            return null;
-          }
-
-          const data = await res.json();
-          
-          // Save token to localStorage on the client side after successful auth
-          if (typeof window !== "undefined") {
-            localStorage.setItem("accessToken", data.access_token);
-          }
-          
           return {
-            id: data.user.id.toString(),
-            email: data.user.email,
-            name: data.user.full_name,
-            accessToken: data.access_token,
+            id: result.user.id,
+            email: result.user.email,
+            name: result.user.full_name,
+            accessToken: result.access_token,
           };
         } catch (error) {
           console.error("Auth error:", error);
