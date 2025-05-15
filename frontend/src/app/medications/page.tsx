@@ -35,7 +35,7 @@ export default function MedicationsPage() {
 
   const fetchMedications = async () => {
     try {
-      const response = await fetch("http://localhost:8001/api/medications", {
+      const response = await fetch("/api/medications", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
@@ -57,9 +57,26 @@ export default function MedicationsPage() {
 
   const handleMarkAsTaken = async (medicationId: number) => {
     try {
-      // TODO: Implement mark as taken functionality
+      const response = await fetch("http://localhost:8001/api/medication-logs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          medication_ids: [medicationId],
+          taken_at: new Date().toISOString(),
+          notes: "Đã uống thuốc"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to mark medication as taken");
+      }
+
       toast.success("Đã ghi nhận uống thuốc");
     } catch (err) {
+      console.error("Error:", err);
       toast.error("Không thể ghi nhận uống thuốc");
     }
   };

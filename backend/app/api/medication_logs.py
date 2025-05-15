@@ -8,7 +8,7 @@ from app.utils.database import get_session
 from app.services.medication_log_service import MedicationLogService
 from app.core.auth import get_current_user
 
-router = APIRouter(prefix="/api/medication-logs", tags=["medication-logs"])
+router = APIRouter(prefix="/medication-logs", tags=["medication-logs"])
 medication_log_service = MedicationLogService()
 
 

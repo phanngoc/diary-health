@@ -1,38 +1,52 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
-from .medication import Medication
 
 
 class MedicationLogBase(SQLModel):
-    medication_id: int = Field(foreign_key="medication.id")
     taken_at: datetime
-    notes: Optional[str] = None
-    feeling_after: Optional[str] = None
+    notes: str | None = None
+    feeling_after: str | None = None
+
+
+class MedicationLogMedication(SQLModel, table=True):
+    medication_log_id: Optional[int] = Field(
+        default=None,
+        foreign_key="medicationlog.id",
+        primary_key=True
+    )
+    medication_id: Optional[int] = Field(
+        default=None,
+        foreign_key="medication.id",
+        primary_key=True
+    )
 
 
 class MedicationLog(MedicationLogBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    medication: "Medication" = Relationship(back_populates="logs")
+    medications: List["Medication"] = Relationship(
+        back_populates="logs",
+        link_model=MedicationLogMedication
+    )
 
 
 class MedicationLogCreate(MedicationLogBase):
-    pass
+    medication_ids: List[int]
 
 
 class MedicationLogRead(MedicationLogBase):
     id: int
-    user_id: int
+    user_id: Optional[int]
     created_at: datetime
     updated_at: datetime
-    medication: Medication
+    medications: List["Medication"]
 
 
 class MedicationLogUpdate(SQLModel):
-    medication_id: Optional[int] = None
-    taken_at: Optional[datetime] = None
-    notes: Optional[str] = None
-    feeling_after: Optional[str] = None 
+    taken_at: datetime | None = None
+    notes: str | None = None
+    feeling_after: str | None = None
+    medication_ids: List[int] | None = None 

@@ -2,6 +2,8 @@
 
 Health Reminder là ứng dụng cho phép người dùng ghi chú thông tin uống thuốc hàng ngày và nhận cảnh báo về tương tác thuốc, chống chỉ định, tác dụng phụ và quá liều lượng.
 
+![Health Reminder](image.png)
+
 ## Tính năng chính
 
 - Đăng nhập người dùng (OAuth qua Supabase)

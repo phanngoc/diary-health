@@ -7,7 +7,7 @@ from app.utils.database import get_session
 from app.services.medication_service import MedicationService
 from app.core.auth import get_current_user
 
-router = APIRouter(prefix="/api/medications", tags=["medications"])
+router = APIRouter(prefix="/medications", tags=["medications"])
 medication_service = MedicationService()
 
 
@@ -16,18 +16,18 @@ def create_medication(
     medication: MedicationCreate,
     current_user: dict = Depends(get_current_user),
 ):
-    return medication_service.create_medication(medication, current_user["id"])
+    return medication_service.create_medication(medication, current_user.id)
 
 
 @router.get("/", response_model=List[Medication])
 async def get_medications(current_user: dict = Depends(get_current_user)):
-    return await medication_service.get_medications(current_user["id"])
+    return await medication_service.get_medications(current_user.id)
 
 
 @router.get("/{medication_id}", response_model=Medication)
 async def get_medication(medication_id: int, current_user: dict = Depends(get_current_user)):
     medication = await medication_service.get_medication(medication_id)
-    if not medication or medication.user_id != current_user["id"]:
+    if not medication or medication.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Medication not found")
     return medication
 
@@ -39,7 +39,7 @@ async def update_medication(
     current_user: dict = Depends(get_current_user)
 ):
     existing = await medication_service.get_medication(medication_id)
-    if not existing or existing.user_id != current_user["id"]:
+    if not existing or existing.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Medication not found")
     return await medication_service.update_medication(medication_id, medication)
 
@@ -50,7 +50,7 @@ async def delete_medication(
     current_user: dict = Depends(get_current_user)
 ):
     existing = await medication_service.get_medication(medication_id)
-    if not existing or existing.user_id != current_user["id"]:
+    if not existing or existing.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Medication not found")
     success = await medication_service.delete_medication(medication_id)
     if not success:

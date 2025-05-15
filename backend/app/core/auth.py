@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 # Cấu hình JWT
 SECRET_KEY = "your-secret-key"  # Thay đổi thành một key bảo mật trong môi trường production
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -19,7 +19,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -31,11 +31,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: Session
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        print("JWT token:", token, "type:", type(token))
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print("Decoded payload:", payload)
         user_id: int = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except JWTError:
+    except JWTError as error:
+        print("JWT error:", error)
         raise credentials_exception
     
     statement = select(User).where(User.id == user_id)
