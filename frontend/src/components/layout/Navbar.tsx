@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { signOut } from "@/auth";
 import { useEffect, useState } from "react";
 import { isClientAuthenticated, removeClientToken } from "@/lib/clientAuth";
 import { Button } from "@/components/ui/button";
+import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
   { href: "/", label: "Trang chủ" },
@@ -18,23 +18,11 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    // Check authentication status on client side
-    setAuthenticated(isClientAuthenticated());
-  }, [pathname]);
-
-  const handleSignOut = async () => {
-    // Remove token from localStorage
-    removeClientToken();
-    
+  const handleSignOut = async () => {    
     // Sign out from NextAuth
-    await signOut({ redirect: false });
-    
-    // Redirect to home page
-    router.push("/");
-    router.refresh();
+    await signOut({ redirect: true, callbackUrl: "/" });
   };
 
   return (
@@ -48,7 +36,7 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-6">
             {navItems
-              .filter(item => !item.auth || (item.auth && authenticated))
+              .filter(item => !item.auth || (item.auth && session))
               .map((item) => (
                 <Link
                   key={item.href}
@@ -63,8 +51,8 @@ export function Navbar() {
                   {item.label}
                 </Link>
               ))}
-            
-            {!authenticated ? (
+
+            {!session ? (
               <div className="flex items-center space-x-2">
                 <Button variant="outline" asChild>
                   <Link href="/auth/login">Đăng nhập</Link>
