@@ -459,7 +459,7 @@ export default function MedicationLogsPage() {
       ) : viewMode === "calendar" ? (
         <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
           <div className="md:col-span-2">
-            <Card className="h-[700px]">
+            <Card className="h-[700px] overflow-visible">
               <CardHeader className="pb-0">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Lịch thuốc</CardTitle>
@@ -487,7 +487,7 @@ export default function MedicationLogsPage() {
                     events={events}
                     startAccessor="start"
                     endAccessor="end"
-                    style={{ height: "100%" }}
+                    style={{ height: "580px" }}
                     views={['month', 'week', 'day', 'agenda']}
                     defaultView={Views.MONTH}
                     view={view as any}
@@ -497,11 +497,23 @@ export default function MedicationLogsPage() {
                     onSelectEvent={handleSelectEvent}
                     eventPropGetter={eventStyleGetter}
                     selectable={true}
+                    popup={true}
                     onSelectSlot={(slotInfo) => {
                       if (session) {
                         window.location.href = `/medications/new?date=${slotInfo.start.toISOString()}`;
                       } else {
                         toast.error("Bạn cần đăng nhập để thêm thuốc mới");
+                      }
+                    }}
+                    components={{
+                      month: {
+                        dateHeader: ({ date, label }) => (
+                          <span style={{
+                            fontWeight: new Date().toDateString() === date.toDateString() ? 'bold' : 'normal'
+                          }}>
+                            {label}
+                          </span>
+                        ),
                       }
                     }}
                     tooltipAccessor={event => {

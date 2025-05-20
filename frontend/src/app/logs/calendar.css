@@ -2,6 +2,9 @@
 
 .rbc-calendar {
   font-family: inherit;
+  height: 600px !important;
+  min-height: 600px !important;
+  overflow: visible !important;
 }
 
 .rbc-toolbar {
@@ -37,15 +40,30 @@
   font-weight: 600;
   background-color: #f8fafc;
   border-color: #e2e8f0;
+  height: 40px !important;
+}
+
+.rbc-month-header {
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .rbc-month-view {
   border-radius: 0.5rem;
   border-color: #e2e8f0;
+  height: 580px !important;
+  min-height: 580px !important;
+  overflow: visible !important;
 }
 
 .rbc-day-bg + .rbc-day-bg {
   border-color: #e2e8f0;
+}
+
+.rbc-month-row {
+  min-height: 80px !important;
+  overflow: visible !important;
 }
 
 .rbc-month-row + .rbc-month-row {
@@ -63,6 +81,16 @@
 .rbc-date-cell {
   padding: 0.25rem 0.5rem;
   text-align: center;
+}
+
+.rbc-date-cell > a {
+  color: inherit;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 50%;
 }
 
 .rbc-today {
