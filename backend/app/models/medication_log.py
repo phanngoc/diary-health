@@ -1,12 +1,16 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+
+# Use TYPE_CHECKING to prevent circular imports
+if TYPE_CHECKING:
+    from .medication import Medication
 
 
 class MedicationLogBase(SQLModel):
     taken_at: datetime
-    notes: str | None = None
-    feeling_after: str | None = None
+    notes: Optional[str] = None
+    feeling_after: Optional[str] = None
 
 
 class MedicationLogMedication(SQLModel, table=True):
@@ -42,11 +46,11 @@ class MedicationLogRead(MedicationLogBase):
     user_id: Optional[int]
     created_at: datetime
     updated_at: datetime
-    medications: List["Medication"]
+    medications: List["Medication"] = []
 
 
 class MedicationLogUpdate(SQLModel):
-    taken_at: datetime | None = None
-    notes: str | None = None
-    feeling_after: str | None = None
-    medication_ids: List[int] | None = None 
+    taken_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    feeling_after: Optional[str] = None
+    medication_ids: Optional[List[int]] = None 
