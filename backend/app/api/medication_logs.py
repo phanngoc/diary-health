@@ -19,13 +19,13 @@ def create_medication_log(
 ):
     # Verify the medication belongs to the user
     medication = session.get(Medication, medication_log.medication_id)
-    if not medication or medication.user_id != current_user["id"]:
+    if not medication or medication.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Medication not found"
         )
     
-    db_medication_log = MedicationLog.from_orm(medication_log, update={"user_id": current_user["id"]})
+    db_medication_log = MedicationLog.from_orm(medication_log, update={"user_id": current_user.id})
     session.add(db_medication_log)
     session.commit()
     session.refresh(db_medication_log)
@@ -34,13 +34,13 @@ def create_medication_log(
 
 @router.get("/", response_model=List[MedicationLogRead])
 async def get_medication_logs(current_user: dict = Depends(get_current_user)):
-    return await medication_log_service.get_medication_logs(current_user["id"])
+    return await medication_log_service.get_medication_logs(current_user.id)
 
 
 @router.get("/{log_id}", response_model=MedicationLogRead)
 async def get_medication_log(log_id: int, current_user: dict = Depends(get_current_user)):
     log = await medication_log_service.get_medication_log(log_id)
-    if not log or log.user_id != current_user["id"]:
+    if not log or log.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Medication log not found")
     return log
 
@@ -52,7 +52,7 @@ async def update_medication_log(
     current_user: dict = Depends(get_current_user)
 ):
     existing = await medication_log_service.get_medication_log(log_id)
-    if not existing or existing.user_id != current_user["id"]:
+    if not existing or existing.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Medication log not found")
     return await medication_log_service.update_medication_log(log_id, log)
 
@@ -63,7 +63,7 @@ async def delete_medication_log(
     current_user: dict = Depends(get_current_user)
 ):
     existing = await medication_log_service.get_medication_log(log_id)
-    if not existing or existing.user_id != current_user["id"]:
+    if not existing or existing.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Medication log not found")
     success = await medication_log_service.delete_medication_log(log_id)
     if not success:

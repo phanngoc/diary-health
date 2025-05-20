@@ -66,7 +66,7 @@ export default function NewMedicationNotePage() {
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent>
+            <CardContent className="mt-4">
               <div className="grid gap-4">
                 <Textarea
                   placeholder="Ví dụ: Hôm nay tôi uống Paracetamol 500mg vào buổi sáng. Sau khi uống, tôi thấy đỡ đau đầu."
@@ -76,7 +76,7 @@ export default function NewMedicationNotePage() {
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between mt-4">
               <Button
                 variant="outline"
                 type="button"

@@ -12,6 +12,10 @@ __all__ = [
     "MedicationLogUpdate"
 ]
 
-# Fix circular import
-Medication.update_forward_refs()
-MedicationLog.update_forward_refs() 
+# First rebuild base models to ensure they're fully defined
+Medication.model_rebuild()
+MedicationLog.model_rebuild()
+
+# Then rebuild models with nested relationships
+MedicationRead.model_rebuild()
+MedicationLogRead.model_rebuild()

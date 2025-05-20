@@ -1,13 +1,19 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+
+# Import only the MedicationLogMedication class, not the whole module
 from .medication_log import MedicationLogMedication
 
+# Use TYPE_CHECKING to prevent circular imports
+if TYPE_CHECKING:
+    from .medication_log import MedicationLog
+
 class MedicationBase(SQLModel):
-    name: str | None = None
-    dosage: str | None = None
-    frequency: str | None = None
-    notes: str | None = None
+    name: Optional[str] = None
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    notes: Optional[str] = None
 
 class Medication(MedicationBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -29,7 +35,11 @@ class MedicationRead(MedicationBase):
     updated_at: datetime
 
 class MedicationUpdate(SQLModel):
-    name: str | None = None
-    dosage: str | None = None
-    frequency: str | None = None
-    notes: str | None = None 
+    name: Optional[str] = None
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    notes: Optional[str] = None 
+
+
+Medication.model_rebuild()
+
