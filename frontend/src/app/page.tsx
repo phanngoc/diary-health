@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,107 +10,133 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+
+const BASE_URL_API = "http://localhost:8001";
 
 export default function Home() {
+  const [note, setNote] = useState(
+    "Hôm nay tôi uống paracetamol 500mg, và cảm thấy đỡ đau đầu hơn "
+  );
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState<null | {
+    medication_name: string;
+    dosage: string;
+    frequency: string;
+    taken_at: string;
+    feeling_after: string;
+    saved: boolean;
+  }>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!note.trim()) return;
+
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch(
+        `${BASE_URL_API}/api/ai/analyze-and-save`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to analyze note");
+      }
+
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      console.error("Error analyzing note:", error);
+      // TODO: Hiển thị thông báo lỗi cho người dùng
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="container py-8">
-      <div className="mx-auto max-w-3xl space-y-8">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-            Chào mừng đến với Health Reminder
-          </h1>
-          <p className="text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-            Ứng dụng ghi chú thuốc thông minh với AI giúp bạn theo dõi và quản lý thuốc dễ dàng
-          </p>
-        </div>
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-6 text-2xl font-bold">Tạo ghi chú thuốc mới</h1>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Ghi chú thuốc</CardTitle>
+            <CardDescription>
+              Nhập thông tin về thuốc bằng văn bản tự do. AI sẽ tự động hiểu
+              thông tin về tên thuốc, liều lượng và thời gian.
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="mt-4">
+              <div className="grid gap-4">
+                <Textarea
+                  placeholder="Ví dụ: Hôm nay tôi uống Paracetamol 500mg vào buổi sáng. Sau khi uống, tôi thấy đỡ đau đầu."
+                  className="min-h-32"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between mt-4">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setNote("")}
+              >
+                Xóa
+              </Button>
+              <Button type="submit" disabled={isAnalyzing || !note.trim()}>
+                {isAnalyzing ? "Đang phân tích..." : "Phân tích & Lưu"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+
+        {result && (
+          <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Ghi chú thuốc</CardTitle>
+              <CardTitle>Kết quả phân tích</CardTitle>
               <CardDescription>
-                Nhập thông tin thuốc của bạn bằng văn bản tự do
+                AI đã phân tích ghi chú của bạn và trích xuất thông tin sau:
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p>
-                Nhập thông tin về loại thuốc, liều lượng, thời gian uống thuốc và AI
-                sẽ tự động hiểu và lưu trữ thông tin.
-              </p>
+              <div className="grid gap-2">
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <p className="font-medium">Tên thuốc:</p>
+                  <p className="col-span-2">{result.medication_name}</p>
+                </div>
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <p className="font-medium">Liều lượng:</p>
+                  <p className="col-span-2">{result.dosage}</p>
+                </div>
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <p className="font-medium">Tần suất:</p>
+                  <p className="col-span-2">{result.frequency}</p>
+                </div>
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <p className="font-medium">Thời gian uống:</p>
+                  <p className="col-span-2">{result.taken_at}</p>
+                </div>
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <p className="font-medium">Cảm nhận:</p>
+                  <p className="col-span-2">{result.feeling_after}</p>
+                </div>
+              </div>
             </CardContent>
             <CardFooter>
-              <Link href="/medications/new" className="w-full">
-                <Button className="w-full">Tạo ghi chú thuốc</Button>
-              </Link>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Lịch sử uống thuốc</CardTitle>
-              <CardDescription>
-                Xem lịch sử uống thuốc của bạn
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Theo dõi lịch sử thuốc đã uống, thời gian và cảm nhận sau khi
-                dùng thuốc.
+              <p className="text-sm text-muted-foreground">
+                {result.saved
+                  ? "✅ Thông tin đã được lưu vào hệ thống"
+                  : "⚠️ Thông tin chưa được lưu vào hệ thống"}
               </p>
-            </CardContent>
-            <CardFooter>
-              <Link href="/logs" className="w-full">
-                <Button variant="outline" className="w-full">
-                  Xem lịch sử
-                </Button>
-              </Link>
             </CardFooter>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Cảnh báo</CardTitle>
-              <CardDescription>
-                Nhận cảnh báo về tương tác thuốc
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Hệ thống AI phát hiện tương tác thuốc tiềm ẩn, chống chỉ định và
-                cảnh báo quá liều.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Link href="/alerts" className="w-full">
-                <Button variant="outline" className="w-full">
-                  Xem cảnh báo
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Danh sách thuốc</CardTitle>
-              <CardDescription>
-                Quản lý các loại thuốc của bạn
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Xem thông tin chi tiết về tất cả thuốc bạn đang dùng, bao gồm liều lượng,
-                tần suất sử dụng.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Link href="/medications" className="w-full">
-                <Button variant="outline" className="w-full">
-                  Xem thuốc của tôi
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        </div>
+        )}
       </div>
     </div>
   );

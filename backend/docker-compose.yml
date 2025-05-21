@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Supabase services
   supabase-db:
