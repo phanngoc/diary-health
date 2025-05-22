@@ -72,7 +72,6 @@ class ApiClient {
 
       return new Promise(() => {}); 
     }
-    
 
     return response.json();
   }

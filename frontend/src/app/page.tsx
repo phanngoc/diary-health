@@ -11,14 +11,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-
-const BASE_URL_API = "http://localhost:8001";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CameraCapture } from "@/components/ui/camera-capture";
+import { CameraIcon, TextIcon, LoadingSpinner } from "@/components/ui/icons";
+import { apiClient } from "@/lib/apiClient";
 
 export default function Home() {
   const [note, setNote] = useState(
     "Hôm nay tôi uống paracetamol 500mg, và cảm thấy đỡ đau đầu hơn "
   );
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("text");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<null | {
     medication_name: string;
     dosage: string;
@@ -28,30 +33,46 @@ export default function Home() {
     saved: boolean;
   }>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleImageCapture = (imageDataUrl: string) => {
+    setCapturedImage(imageDataUrl);
+  };
+
+  const handleClearImage = () => {
+    setCapturedImage(null);
+  };
+
+  const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!note.trim()) return;
+    setError(null);
+    
+    // Validate input based on active tab
+    if (activeTab === "text" && !note.trim()) return;
+    if (activeTab === "camera" && !capturedImage) return;
 
     setIsAnalyzing(true);
     try {
-      const response = await fetch(
-        `${BASE_URL_API}/api/ai/analyze-and-save`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to analyze note");
+      let payload;
+      console.log("activeTab", activeTab);
+      if (activeTab === "text") {
+        payload = { note };
+      } else {
+        // For camera mode, send the image as base64
+        payload = { image: capturedImage };
       }
 
-      const data = await response.json();
-      setResult(data);
+      const response = await apiClient.post(
+        `/api/analyze`,
+        payload
+      );
+
+      if (!response.status === 200) {
+        throw new Error("Failed to analyze input");
+      }
+
+      setResult(response);
     } catch (error) {
-      console.error("Error analyzing note:", error);
-      // TODO: Hiển thị thông báo lỗi cho người dùng
+      console.error("Error analyzing:", error);
+      setError("Có lỗi xảy ra khi phân tích. Vui lòng thử lại sau.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -66,31 +87,93 @@ export default function Home() {
           <CardHeader>
             <CardTitle>Ghi chú thuốc</CardTitle>
             <CardDescription>
-              Nhập thông tin về thuốc bằng văn bản tự do. AI sẽ tự động hiểu
+              Nhập thông tin hoặc chụp ảnh về thuốc. AI sẽ tự động hiểu
               thông tin về tên thuốc, liều lượng và thời gian.
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="mt-4">
-              <div className="grid gap-4">
-                <Textarea
-                  placeholder="Ví dụ: Hôm nay tôi uống Paracetamol 500mg vào buổi sáng. Sau khi uống, tôi thấy đỡ đau đầu."
-                  className="min-h-32"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </div>
+          <form onSubmit={handleAnalyze}>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid grid-cols-2 w-full mb-4">
+                  <TabsTrigger value="text" className="flex items-center gap-2">
+                    <TextIcon size={16} />
+                    <span>Nhập văn bản</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="camera" className="flex items-center gap-2">
+                    <CameraIcon size={16} />
+                    <span>Chụp ảnh</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="text" className="mt-4">
+                  <Textarea
+                    placeholder="Ví dụ: Hôm nay tôi uống Paracetamol 500mg vào buổi sáng. Sau khi uống, tôi thấy đỡ đau đầu."
+                    className="min-h-32"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="camera" className="mt-4">
+                  {!capturedImage ? (
+                    <CameraCapture onCapture={handleImageCapture} />
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-full max-w-md aspect-video bg-black rounded-md overflow-hidden">
+                        <img 
+                          src={capturedImage} 
+                          alt="Captured medication" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleClearImage}
+                        type="button"
+                        variant="outline"
+                        className="mt-4"
+                      >
+                        Chụp lại
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+              
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
             </CardContent>
+            
             <CardFooter className="flex justify-between mt-4">
               <Button
                 variant="outline"
                 type="button"
-                onClick={() => setNote("")}
+                onClick={() => {
+                  if (activeTab === "text") {
+                    setNote("");
+                  } else {
+                    handleClearImage();
+                  }
+                  setResult(null);
+                }}
               >
                 Xóa
               </Button>
-              <Button type="submit" disabled={isAnalyzing || !note.trim()}>
-                {isAnalyzing ? "Đang phân tích..." : "Phân tích & Lưu"}
+              <Button 
+                type="submit" 
+                disabled={isAnalyzing || (activeTab === "text" && !note.trim()) || (activeTab === "camera" && !capturedImage)}
+                className="flex items-center gap-2"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <LoadingSpinner size={16} />
+                    <span>Đang phân tích...</span>
+                  </>
+                ) : (
+                  "Phân tích & Lưu"
+                )}
               </Button>
             </CardFooter>
           </form>
@@ -101,7 +184,7 @@ export default function Home() {
             <CardHeader>
               <CardTitle>Kết quả phân tích</CardTitle>
               <CardDescription>
-                AI đã phân tích ghi chú của bạn và trích xuất thông tin sau:
+                AI đã phân tích thông tin của bạn và trích xuất các chi tiết sau:
               </CardDescription>
             </CardHeader>
             <CardContent>
