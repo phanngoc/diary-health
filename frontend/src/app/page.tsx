@@ -14,8 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CameraCapture } from "@/components/ui/camera-capture";
 import { CameraIcon, TextIcon, LoadingSpinner } from "@/components/ui/icons";
-
-const BASE_URL_API = "http://localhost:8001";
+import { apiClient } from "@/lib/apiClient";
 
 export default function Home() {
   const [note, setNote] = useState(
@@ -53,6 +52,7 @@ export default function Home() {
     setIsAnalyzing(true);
     try {
       let payload;
+      console.log("activeTab", activeTab);
       if (activeTab === "text") {
         payload = { note };
       } else {
@@ -60,21 +60,16 @@ export default function Home() {
         payload = { image: capturedImage };
       }
 
-      const response = await fetch(
-        `${BASE_URL_API}/api/ai/analyze-and-save`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
+      const response = await apiClient.post(
+        `/api/analyze`,
+        payload
       );
 
-      if (!response.ok) {
+      if (!response.status === 200) {
         throw new Error("Failed to analyze input");
       }
 
-      const data = await response.json();
-      setResult(data);
+      setResult(response);
     } catch (error) {
       console.error("Error analyzing:", error);
       setError("Có lỗi xảy ra khi phân tích. Vui lòng thử lại sau.");

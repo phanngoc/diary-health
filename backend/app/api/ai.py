@@ -56,6 +56,7 @@ async def analyze_and_save_medication(
     user_id: int = 1,  # Temporary, will be replaced with real authentication
     session: Session = Depends(get_session),
 ):
+    print('analyze_and_save_medication', request.note, request.image)
     try:
         # Check if we have either note or image
         if not request.note and not request.image:
