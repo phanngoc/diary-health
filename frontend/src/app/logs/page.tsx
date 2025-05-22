@@ -12,6 +12,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import { apiClient } from "@/lib/apiClient";
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './calendar.css';
@@ -191,29 +192,11 @@ export default function MedicationLogsPage() {
 
   const fetchMedicationLogs = async () => {
     try {
-      // Get token from session or localStorage
-      const token = session?.accessToken || localStorage.getItem("token") || "";
+      // Using apiClient which handles authentication automatically
+      const data = await apiClient.get<MedicationLog[]>("/api/medication-logs");
+    
       
-      const response = await fetch("/api/medication-logs", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch medication logs");
-      }
-
-      const data = await response.json();
-      
-      // Sort logs by taken_at date, newest first
-      const sortedLogs = data.sort((a: MedicationLog, b: MedicationLog) => 
-        new Date(b.taken_at).getTime() - new Date(a.taken_at).getTime()
-      );
-      
-      setMedicationLogs(sortedLogs);
+      setMedicationLogs(data);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching medication logs:", error);
@@ -229,24 +212,10 @@ export default function MedicationLogsPage() {
     }
 
     try {
-      // Get token from session or localStorage
-      const token = session?.accessToken || localStorage.getItem("token") || "";
-      
-      const response = await fetch("http://localhost:8001/api/medication-logs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          medication_ids: medicationIds,
-          taken_at: new Date().toISOString(),
-        }),
+      await apiClient.post("/api/medication-logs", {
+        medication_ids: medicationIds,
+        taken_at: new Date().toISOString(),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to mark medications as taken");
-      }
 
       toast.success("Đã ghi nhận việc uống thuốc thành công");
       

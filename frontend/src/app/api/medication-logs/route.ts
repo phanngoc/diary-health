@@ -7,28 +7,19 @@ import { type NextRequest } from 'next/server';
  * @returns {Promise<Array>} - Promise resolving to array of medications
  */
 async function fetchMedicationLogs(token) {
-  try {
+
     console.log("Fetching medication logs...", token);
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/medication-logs`, {
+    return await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/medication-logs`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token.accessToken}`,
         'Content-Type': 'application/json'
       }
     });
-
-    const responseData = await response.json();
-    console.log("Response status:", responseData);
-
-    return responseData;
-  } catch (error) {
-    console.error('Error fetching medication logs:', error);
-    throw error;
-  }
 }
 
 export async function GET(request: NextRequest) {
-    console.log("Fetching medication logs...");
+    console.log("Fetching medication logs : start");
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
     if (!token) {
@@ -38,6 +29,12 @@ export async function GET(request: NextRequest) {
     // Fetch medications from the database or external API
     const medicationLogs = await fetchMedicationLogs(token);
 
-    return new Response(JSON.stringify(medicationLogs), { status: 200 });
+    if (medicationLogs.status !== 200) {
+      // Return a 401 error for the client to handle
+      return new Response(JSON.stringify({ error: "Token expired" }), { status: 401 });
+    }
+    const medicationLogsData = await medicationLogs.json();
+
+    return new Response(JSON.stringify(medicationLogsData), { status: 200 });
 }
 

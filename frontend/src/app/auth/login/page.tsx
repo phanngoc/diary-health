@@ -1,7 +1,7 @@
 // Login Page
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -9,14 +9,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { getToken } from "@/lib/api";
+import { validateToken } from "@/lib/validateToken";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingToken, setIsCheckingToken] = useState(true);
   const [formData, setFormData] = useState({
     email: "admin@example.com",
     password: "adminpassword",
   });
+  
+  // Check if token is valid on page load
+  useEffect(() => {
+    const checkToken = async () => {
+      setIsCheckingToken(true);
+      const token = getToken();
+      
+      if (token) {
+        try {
+          const isValid = await validateToken(token);
+          if (isValid) {
+            toast.success("Bạn đã đăng nhập!");
+            router.push("/");
+            return;
+          }
+        } catch (error) {
+          console.error("Token validation error:", error);
+        }
+      }
+      setIsCheckingToken(false);
+    };
+    
+    checkToken();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,16 +65,9 @@ export default function LoginPage() {
 
       if (result?.ok) {
         toast.success("Đăng nhập thành công!");
-        router.push("/medications");
-        // router.refresh();
+        router.push("/");
+        router.refresh();
       }
-      // if (result?.error) {
-      //   toast.error("Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.");
-      // } else {
-      //   toast.success("Đăng nhập thành công!");
-      //   router.push("/medications");
-      //   router.refresh();
-      // }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
@@ -77,7 +97,7 @@ export default function LoginPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                disabled={isLoading}
+                disabled={isLoading || isCheckingToken}
               />
             </div>
             <div className="space-y-2">
@@ -98,11 +118,11 @@ export default function LoginPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                disabled={isLoading}
+                disabled={isLoading || isCheckingToken}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+            <Button type="submit" className="w-full" disabled={isLoading || isCheckingToken}>
+              {isLoading ? "Đang đăng nhập..." : isCheckingToken ? "Đang kiểm tra..." : "Đăng nhập"}
             </Button>
           </form>
         </CardContent>

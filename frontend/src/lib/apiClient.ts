@@ -1,7 +1,8 @@
 // API client for making authenticated requests to the backend
 import { getToken } from "./api";
+import { signOut } from "next-auth/react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const API_URL = process.env.API_URL || "http://localhost:3000";
 
 class ApiClient {
   async get<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -60,19 +61,18 @@ class ApiClient {
       headers,
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: response.statusText,
-      }));
-      
-      // Handle 401 Unauthorized errors (token expired, etc.)
-      if (response.status === 401 && typeof window !== 'undefined') {
-        // Only redirect on client side
-        console.error("Unauthorized: Please login again");
-      }
-      
-      throw new Error(error.detail || error.message || "An error occurred");
+    if (response.status === 200) {
+      return response.json() as Promise<T>;
     }
+    // Handle 401 Unauthorized errors (token expired, etc.)
+    if (response.status === 401 && typeof window !== 'undefined') {
+      // Only redirect on client side
+      console.error("Unauthorized: Token expired, redirecting to login.");
+      signOut({ redirect: true }); // Sign out the user
+
+      return new Promise(() => {}); 
+    }
+    
 
     return response.json();
   }

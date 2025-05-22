@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/apiClient";
 
 interface Medication {
   id: number;
@@ -35,15 +36,7 @@ export default function MedicationsPage() {
 
   const fetchMedications = async () => {
     try {
-      const response = await fetch("/api/medications", {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch medications");
-      }
+      const response = await apiClient.get("/api/medications");
 
       const data = await response.json();
       setMedications(data);
