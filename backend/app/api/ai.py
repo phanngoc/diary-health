@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 from sqlmodel import Session
 
 from app.services.ai_service import extract_medication_info
@@ -12,7 +13,8 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 
 class MedicationNoteRequest(BaseModel):
-    note: str
+    note: Optional[str] = None
+    image: Optional[str] = None  # Base64 encoded image
 
 
 class MedicationNoteResponse(BaseModel):
@@ -55,15 +57,30 @@ async def analyze_and_save_medication(
     session: Session = Depends(get_session),
 ):
     try:
-        print('request note:', request.note)
-        # Extract information from the note using AI
-        extracted_info = await extract_medication_info(request.note)
+        # Check if we have either note or image
+        if not request.note and not request.image:
+            raise HTTPException(
+                status_code=400,
+                detail="Either note or image must be provided"
+            )
+        
+        # Extract information using AI
+        if request.note:
+            print('Processing text note')
+            extracted_info = await extract_medication_info(note=request.note)
+            notes_content = request.note
+        else:
+            print('Processing image data')
+            extracted_info = await extract_medication_info(image_data=request.image)
+            notes_content = "Image uploaded and analyzed by AI"
+        
         print('extracted_info', extracted_info)
+        
         # Check if we have a medication name
         if not extracted_info.get("medication_name"):
             raise HTTPException(
                 status_code=400, 
-                detail="Could not extract medication name from the note"
+                detail="Could not extract medication information from the input"
             )
         
         # Create or update the medication
@@ -71,7 +88,7 @@ async def analyze_and_save_medication(
             name=extracted_info.get("medication_name"),
             dosage=extracted_info.get("dosage"),
             frequency=extracted_info.get("frequency"),
-            notes=request.note
+            notes=notes_content
         )
         
         # Save the medication
@@ -93,7 +110,7 @@ async def analyze_and_save_medication(
         # Create a medication log entry
         medication_log_create = MedicationLogCreate(
             medication_ids=[db_medication.id],
-            notes=request.note,
+            notes=notes_content,
             feeling_after=extracted_info.get("feeling_after"),
             taken_at=taken_at,  # Use the processed taken_at value instead of the raw value
         )
