@@ -33,14 +33,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { apiClient } from "@/lib/apiClient";
-import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Medication {
   id: number;
   name: string;
   dosage: string;
+  frequency?: string;
+  notes?: string;
   type?: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: number;
 }
 
 interface MedicationLog {
@@ -62,6 +73,7 @@ const formSchema = z.object({
   taken_at: z.date({
     required_error: "Vui lòng chọn thời gian uống thuốc",
   }),
+  medication_ids: z.array(z.number()).min(1, "Vui lòng chọn ít nhất một loại thuốc"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -86,6 +98,8 @@ export default function MedicationLogDetailPage({ params }: { params: Promise<{ 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logId, setLogId] = useState<number | null>(null);
+  const [availableMedications, setAvailableMedications] = useState<Medication[]>([]);
+  const [loadingMedications, setLoadingMedications] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -93,6 +107,7 @@ export default function MedicationLogDetailPage({ params }: { params: Promise<{ 
       notes: "",
       feeling_after: "",
       taken_at: new Date(),
+      medication_ids: [],
     },
   });
 
@@ -117,6 +132,7 @@ export default function MedicationLogDetailPage({ params }: { params: Promise<{ 
   useEffect(() => {
     if (session?.accessToken && logId) {
       fetchMedicationLog();
+      fetchAvailableMedications();
     }
   }, [session, logId]);
 
@@ -127,9 +143,23 @@ export default function MedicationLogDetailPage({ params }: { params: Promise<{ 
         notes: medicationLog.notes || "",
         feeling_after: medicationLog.feeling_after || "",
         taken_at: new Date(medicationLog.taken_at),
+        medication_ids: medicationLog.medications.map(med => med.id),
       });
     }
   }, [medicationLog, form]);
+
+  const fetchAvailableMedications = async () => {
+    try {
+      setLoadingMedications(true);
+      const data = await apiClient.get<Medication[]>("/api/medications");
+      setAvailableMedications(data);
+    } catch (err) {
+      console.error("Error fetching medications:", err);
+      toast.error("Không thể tải danh sách thuốc");
+    } finally {
+      setLoadingMedications(false);
+    }
+  };
 
   const fetchMedicationLog = async () => {
     if (!logId) return;
@@ -156,7 +186,7 @@ export default function MedicationLogDetailPage({ params }: { params: Promise<{ 
         notes: values.notes,
         feeling_after: values.feeling_after,
         taken_at: values.taken_at.toISOString(),
-        medication_ids: medicationLog.medications.map(med => med.id),
+        medication_ids: values.medication_ids,
       });
 
       toast.success("Đã cập nhật thông tin ghi chép thuốc thành công");
@@ -301,6 +331,91 @@ export default function MedicationLogDetailPage({ params }: { params: Promise<{ 
                       </FormControl>
                       <FormDescription>
                         Thời gian bạn uống thuốc
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="medication_ids"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thuốc đã sử dụng</FormLabel>
+                      <FormControl>
+                        <div className="space-y-4">
+                          {/* Display selected medications */}
+                          {field.value.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {field.value.map((medicationId) => {
+                                const medication = availableMedications.find(med => med.id === medicationId);
+                                return medication ? (
+                                  <div key={medicationId} className="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-md px-3 py-1 text-sm">
+                                    <span>{medication.name} ({medication.dosage})</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newValue = field.value.filter(id => id !== medicationId);
+                                        field.onChange(newValue);
+                                      }}
+                                      className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ) : null;
+                              })}
+                            </div>
+                          )}
+
+                          {/* Dropdown to add medications */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button type="button" variant="outline" className="w-full justify-start">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Thêm thuốc
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-80">
+                              {loadingMedications ? (
+                                <div className="p-4 text-center">
+                                  <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                  <p className="text-sm text-muted-foreground mt-2">Đang tải...</p>
+                                </div>
+                              ) : availableMedications.length === 0 ? (
+                                <div className="p-4 text-center">
+                                  <p className="text-sm text-muted-foreground">Không có thuốc nào</p>
+                                </div>
+                              ) : (
+                                availableMedications.map((medication) => (
+                                  <DropdownMenuCheckboxItem
+                                    key={medication.id}
+                                    checked={field.value.includes(medication.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        field.onChange([...field.value, medication.id]);
+                                      } else {
+                                        field.onChange(field.value.filter(id => id !== medication.id));
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{medication.name}</span>
+                                      <span className="text-sm text-muted-foreground">
+                                        {medication.dosage}
+                                        {medication.frequency && ` - ${medication.frequency}`}
+                                      </span>
+                                    </div>
+                                  </DropdownMenuCheckboxItem>
+                                ))
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Chọn các loại thuốc đã sử dụng trong lần này
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

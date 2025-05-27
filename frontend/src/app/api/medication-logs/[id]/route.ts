@@ -52,7 +52,7 @@ export async function PUT(
     // Access params directly without await
     const { id } = await context.params;
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medication-logs/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/medication-logs/${id}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
@@ -87,7 +87,7 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/medication-logs/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/medication-logs/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,

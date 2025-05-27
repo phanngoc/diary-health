@@ -1,7 +1,9 @@
 from typing import List, Optional
 from sqlmodel import Session, select
-from ..models.medication_log import MedicationLog, MedicationLogCreate, MedicationLogUpdate
+from ..models.medication_log import MedicationLog, MedicationLogCreate, MedicationLogUpdate, MedicationLogMedication
+from ..models.medication import Medication
 from ..config.database import get_session
+from datetime import datetime
 
 class MedicationLogService:
     def __init__(self, session: Session = next(get_session())):
@@ -19,9 +21,21 @@ class MedicationLogService:
         return self.session.exec(statement).first()
 
     async def create_medication_log(self, log: MedicationLogCreate, user_id: int) -> MedicationLog:
-        db_log = MedicationLog.model_validate(log)
-        db_log.user_id = user_id
+        # Create the medication log
+        log_data = log.model_dump(exclude={"medication_ids"})
+        db_log = MedicationLog(**log_data, user_id=user_id)
         self.session.add(db_log)
+        self.session.commit()
+        self.session.refresh(db_log)
+        
+        # Create medication relationships
+        for medication_id in log.medication_ids:
+            medication_relation = MedicationLogMedication(
+                medication_log_id=db_log.id,
+                medication_id=medication_id
+            )
+            self.session.add(medication_relation)
+        
         self.session.commit()
         self.session.refresh(db_log)
         return db_log
@@ -31,9 +45,32 @@ class MedicationLogService:
         if not db_log:
             return None
         
-        log_data = log.model_dump(exclude_unset=True)
+        # Update basic fields
+        log_data = log.model_dump(exclude_unset=True, exclude={"medication_ids"})
         for key, value in log_data.items():
             setattr(db_log, key, value)
+        
+        # Update updated_at timestamp
+        db_log.updated_at = datetime.utcnow()
+        
+        # Update medication relationships if provided
+        if log.medication_ids is not None:
+            # Remove existing relationships
+            existing_relations = self.session.exec(
+                select(MedicationLogMedication).where(
+                    MedicationLogMedication.medication_log_id == log_id
+                )
+            ).all()
+            for relation in existing_relations:
+                self.session.delete(relation)
+            
+            # Add new relationships
+            for medication_id in log.medication_ids:
+                medication_relation = MedicationLogMedication(
+                    medication_log_id=log_id,
+                    medication_id=medication_id
+                )
+                self.session.add(medication_relation)
         
         self.session.add(db_log)
         self.session.commit()
@@ -45,6 +82,16 @@ class MedicationLogService:
         if not db_log:
             return False
         
+        # Delete medication relationships first
+        existing_relations = self.session.exec(
+            select(MedicationLogMedication).where(
+                MedicationLogMedication.medication_log_id == log_id
+            )
+        ).all()
+        for relation in existing_relations:
+            self.session.delete(relation)
+        
+        # Delete the medication log
         self.session.delete(db_log)
         self.session.commit()
         return True 
