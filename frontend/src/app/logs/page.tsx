@@ -566,22 +566,9 @@ export default function MedicationLogsPage() {
                       className="w-full" 
                       asChild
                     >
-                      <Link href={`/medications/${selectedEvent.medications?.[0]?.id || ''}`}>
+                      <Link href={`/medication-logs/${selectedEvent.id || ''}`}>
                         Xem thuốc
                       </Link>
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => {
-                        const medicationIds = selectedEvent.medications && selectedEvent.medications.length > 0
-                          ? selectedEvent.medications.map(med => med.id)
-                          : [];
-                        handleMarkAsTaken(medicationIds);
-                      }}
-                    >
-                      Ghi nhận lại
                     </Button>
                   </div>
                 </CardFooter>

@@ -39,8 +39,11 @@ async def get_medication_logs(current_user: dict = Depends(get_current_user)):
 
 @router.get("/{log_id}", response_model=MedicationLogRead)
 async def get_medication_log(log_id: int, current_user: dict = Depends(get_current_user)):
-    log = await medication_log_service.get_medication_log(log_id)
+    print("get_medication_log", log_id, current_user.id)
+    log = await medication_log_service.get_medication_log(log_id, current_user.id)
+    print("log", log)
     if not log or log.user_id != current_user.id:
+        print("not current user")
         raise HTTPException(status_code=404, detail="Medication log not found")
     return log
 
