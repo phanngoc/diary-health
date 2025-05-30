@@ -13,6 +13,7 @@ const navItems = [
   { href: "/medications", label: "Thuốc của tôi", auth: true },
   { href: "/logs", label: "Lịch sử", auth: true },
   { href: "/alerts", label: "Cảnh báo", auth: true },
+  { href: "/admin/blog", label: "Quản lý Blog", auth: true, admin: true },
 ];
 
 export function Navbar() {
@@ -36,7 +37,15 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-6">
             {navItems
-              .filter(item => !item.auth || (item.auth && session))
+              .filter(item => {
+                // Show non-auth items to everyone
+                if (!item.auth) return true;
+                // Show auth items only to authenticated users
+                if (item.auth && !session) return false;
+                // Show admin items only to authenticated users (you can add role check here)
+                if (item.admin && !session) return false;
+                return true;
+              })
               .map((item) => (
                 <Link
                   key={item.href}
