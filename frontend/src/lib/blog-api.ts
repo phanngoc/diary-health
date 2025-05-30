@@ -2,8 +2,7 @@
 import { getToken } from './api';
 import { MockBlogAPI } from './mock-blog-data';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-const USE_MOCK_DATA = process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.ADMIN_API_URL || '';
 
 export interface BlogPost {
   id: string;
@@ -79,11 +78,6 @@ class BlogAPI {
     page: number;
     limit: number;
   }> {
-    if (USE_MOCK_DATA) {
-      // Use mock data for development
-      return MockBlogAPI.getPosts(filters);
-    }
-    
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -172,9 +166,6 @@ class BlogAPI {
     categories: Record<string, number>;
     recent_posts: BlogPost[];
   }> {
-    if (USE_MOCK_DATA) {
-      return MockBlogAPI.getStats();
-    }
     
     return this.makeRequest<{
       total_posts: number;

@@ -6,10 +6,15 @@ declare module "next-auth" {
     email: string;
     name: string;
     accessToken: string;
+    role?: string;
+    isAdmin?: boolean;
   }
 
   interface Session {
-    user: User;
+    user: User & {
+      role?: string;
+      isAdmin?: boolean;
+    };
     accessToken: string;
   }
 }
@@ -18,5 +23,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     accessToken: string;
+    role?: string;
+    isAdmin?: boolean;
   }
 }

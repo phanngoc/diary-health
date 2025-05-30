@@ -6,8 +6,9 @@ import { FileText, Users, TrendingUp, Activity, Plus, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { blogAPI } from '@/lib/blog-api';
+import { AdminGuard } from "@/hooks/useAdminAuth";
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -271,5 +272,13 @@ export default function AdminDashboard() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminGuard>
+      <AdminDashboardContent />
+    </AdminGuard>
   );
 }

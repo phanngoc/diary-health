@@ -1,7 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/l              .filter((item) => {
+                // Show non-auth items to everyone
+                if (!item.auth) return true;
+                // Show auth items only to authenticated users
+                if (item.auth && !session) return false;
+                // Show admin items only to admin users
+                if (item.admin && (!session || !session.user?.isAdmin)) return false;
+                return true;
+              })ort { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { isClientAuthenticated, removeClientToken } from "@/lib/clientAuth";

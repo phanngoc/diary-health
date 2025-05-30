@@ -1,6 +1,7 @@
 // Helper utilities for admin API communication
 import { getToken } from 'next-auth/jwt';
 import { NextRequest } from 'next/server';
+import { validateAdminRoute } from './admin-auth';
 
 const ADMIN_API_URL = process.env.ADMIN_API_URL || 'http://localhost:3000/api';
 
@@ -36,21 +37,26 @@ export async function makeAdminRequest(
   return response;
 }
 
-// Get admin token from NextAuth JWT
+// Get admin token from NextAuth JWT with validation
 export async function getAdminToken(request: NextRequest): Promise<string | null> {
+  const validationResult = await validateAdminRoute(request);
+  if (validationResult) {
+    return null;
+  }
+
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-  return token?.access_token as string || null;
+  return token?.accessToken as string || null;
 }
 
-// Validate admin authentication
+// Validate admin authentication with proper admin role check
 export async function validateAdminAuth(request: NextRequest) {
-  const token = await getAdminToken(request);
-  
-  if (!token) {
-    throw new Error('Authentication required');
+  const validationResult = await validateAdminRoute(request);
+  if (validationResult) {
+    throw new Error('Admin authentication required');
   }
-  
-  return token;
+
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  return token?.accessToken as string;
 }
 
 // Handle admin API errors consistently
