@@ -73,7 +73,7 @@ export class BlogPost {
   likeCount: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  publishedAt: Date;
+  publishedAt: Date | null;
 
   @Column({ default: true })
   isActive: boolean;

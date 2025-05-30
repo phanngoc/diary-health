@@ -39,6 +39,10 @@ export class SeedService {
       });
     }
 
+    if (!admin) {
+      throw new Error('Failed to create or find admin user');
+    }
+
     // Create categories
     const categories = [
       {
@@ -67,7 +71,7 @@ export class SeedService {
       },
     ];
 
-    const savedCategories = [];
+    const savedCategories: Category[] = [];
     for (const categoryData of categories) {
       const existing = await this.categoryRepository.findOne({
         where: { slug: categoryData.slug }
@@ -108,7 +112,7 @@ export class SeedService {
       },
     ];
 
-    const savedTags = [];
+    const savedTags: Tag[] = [];
     for (const tagData of tags) {
       const existing = await this.tagRepository.findOne({
         where: { slug: tagData.slug }
