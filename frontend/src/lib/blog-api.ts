@@ -2,7 +2,7 @@
 import { getToken } from './api';
 import { MockBlogAPI } from './mock-blog-data';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const USE_MOCK_DATA = process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_API_URL;
 
 export interface BlogPost {
@@ -52,14 +52,12 @@ class BlogAPI {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const token = getToken();
     const url = `${API_BASE_URL}${endpoint}`;
     
     const config: RequestInit = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
     };
@@ -94,7 +92,7 @@ class BlogAPI {
     });
     
     const queryString = params.toString();
-    const endpoint = `/api/blog/posts${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/admin/blog/posts${queryString ? `?${queryString}` : ''}`;
     
     return this.makeRequest<{
       data: BlogPost[];
@@ -106,12 +104,12 @@ class BlogAPI {
 
   // Get a single blog post by ID
   async getPost(id: string): Promise<BlogPost> {
-    return this.makeRequest<BlogPost>(`/api/blog/posts/${id}`);
+    return this.makeRequest<BlogPost>(`/api/admin/blog/posts/${id}`);
   }
 
   // Create a new blog post
   async createPost(data: CreateBlogPost): Promise<BlogPost> {
-    return this.makeRequest<BlogPost>('/api/blog/posts', {
+    return this.makeRequest<BlogPost>('/api/admin/blog/posts', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -120,7 +118,7 @@ class BlogAPI {
   // Update a blog post
   async updatePost(data: UpdateBlogPost): Promise<BlogPost> {
     const { id, ...updateData } = data;
-    return this.makeRequest<BlogPost>(`/api/blog/posts/${id}`, {
+    return this.makeRequest<BlogPost>(`/api/admin/blog/posts/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
@@ -128,21 +126,21 @@ class BlogAPI {
 
   // Delete a blog post
   async deletePost(id: string): Promise<void> {
-    return this.makeRequest<void>(`/api/blog/posts/${id}`, {
+    return this.makeRequest<void>(`/api/admin/blog/posts/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Publish a draft post
   async publishPost(id: string): Promise<BlogPost> {
-    return this.makeRequest<BlogPost>(`/api/blog/posts/${id}/publish`, {
+    return this.makeRequest<BlogPost>(`/api/admin/blog/posts/${id}/publish`, {
       method: 'PATCH',
     });
   }
 
   // Archive a post
   async archivePost(id: string): Promise<BlogPost> {
-    return this.makeRequest<BlogPost>(`/api/blog/posts/${id}/archive`, {
+    return this.makeRequest<BlogPost>(`/api/admin/blog/posts/${id}/archive`, {
       method: 'PATCH',
     });
   }
@@ -152,12 +150,8 @@ class BlogAPI {
     const formData = new FormData();
     formData.append('image', file);
     
-    const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/blog/upload`, {
+    const response = await fetch(`${API_BASE_URL}/api/admin/blog/upload`, {
       method: 'POST',
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
       body: formData,
     });
     
@@ -178,6 +172,10 @@ class BlogAPI {
     categories: Record<string, number>;
     recent_posts: BlogPost[];
   }> {
+    if (USE_MOCK_DATA) {
+      return MockBlogAPI.getStats();
+    }
+    
     return this.makeRequest<{
       total_posts: number;
       published_posts: number;
@@ -185,7 +183,7 @@ class BlogAPI {
       archived_posts: number;
       categories: Record<string, number>;
       recent_posts: BlogPost[];
-    }>('/api/blog/stats');
+    }>('/api/admin/blog/stats');
   }
 }
 
