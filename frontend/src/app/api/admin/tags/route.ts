@@ -1,50 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-
-const ADMIN_API_URL = process.env.ADMIN_API_URL || 'http://localhost:3000/api';
-
-// Helper function to make requests to admin backend
-async function makeAdminRequest(
-  endpoint: string,
-  options: RequestInit = {},
-  token?: string
-) {
-  const url = `${ADMIN_API_URL}${endpoint}`;
-  
-  const config: RequestInit = {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-  };
-
-  const response = await fetch(url, config);
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-  
-  return response;
-}
+import { validateAdminRoute, getAdminUser } from '@/lib/admin-auth';
+import { makeAdminRequest } from '@/lib/admin-api-utils';
 
 // GET /api/admin/tags - Get all tags
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-
-    if (!token) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    // Validate admin access
+    const adminUser = await getAdminUser(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
-    const response = await makeAdminRequest(
-      '/tags',
-      {},
-      token.access_token as string
-    );
-    
+    const response = await makeAdminRequest('/tags', {}, adminUser.accessToken);
     const data = await response.json();
     return NextResponse.json(data);
 
@@ -60,10 +27,10 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/tags - Create a new tag
 export async function POST(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-
-    if (!token) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    // Validate admin access
+    const adminUser = await getAdminUser(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -74,7 +41,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         body: JSON.stringify(body),
       },
-      token.access_token as string
+      adminUser.accessToken
     );
     
     const data = await response.json();

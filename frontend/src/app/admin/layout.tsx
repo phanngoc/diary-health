@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Settings, FileText, Users, BarChart3, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { AdminGuard } from '@/hooks/useAdminAuth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -45,34 +46,9 @@ const adminNavItems = [
   }
 ];
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { data: session, status } = useSession();
+function AdminLayoutContent({ children }: AdminLayoutProps) {
+  const { data: session } = useSession();
   const router = useRouter();
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    
-    if (!session) {
-      router.push('/auth/login');
-      return;
-    }
-
-    // Check if user is admin (you can implement your own admin check logic)
-    // For now, we'll assume all authenticated users can access admin
-    // In a real app, you'd check user roles/permissions
-  }, [session, status, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -112,7 +88,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <CardContent className="p-4">
                 <div className="text-sm">
                   <div className="font-medium text-gray-900">
-                    {session.user?.name || session.user?.email}
+                    {session?.user?.email}
                   </div>
                   <div className="text-gray-600">Quản trị viên</div>
                   <Button 
@@ -137,5 +113,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
+  return (
+    <AdminGuard>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminGuard>
   );
 }

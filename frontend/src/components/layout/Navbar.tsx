@@ -1,17 +1,8 @@
 "use client";
 
-import Link from "next/l              .filter((item) => {
-                // Show non-auth items to everyone
-                if (!item.auth) return true;
-                // Show auth items only to authenticated users
-                if (item.auth && !session) return false;
-                // Show admin items only to admin users
-                if (item.admin && (!session || !session.user?.isAdmin)) return false;
-                return true;
-              })ort { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import { isClientAuthenticated, removeClientToken } from "@/lib/clientAuth";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "next-auth/react";
 
@@ -20,15 +11,15 @@ const navItems = [
   { href: "/medications", label: "Thuốc của tôi", auth: true },
   { href: "/logs", label: "Lịch sử", auth: true },
   { href: "/alerts", label: "Cảnh báo", auth: true },
+  { href: "/admin", label: "Quản trị", auth: true, admin: true },
   { href: "/admin/blog", label: "Quản lý Blog", auth: true, admin: true },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { data: session, status } = useSession();
 
-  const handleSignOut = async () => {    
+  const handleSignOut = async () => {
     // Sign out from NextAuth
     await signOut({ redirect: true, callbackUrl: "/" });
   };
@@ -44,13 +35,13 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center space-x-6">
             {navItems
-              .filter(item => {
+              .filter((item) => {
                 // Show non-auth items to everyone
                 if (!item.auth) return true;
                 // Show auth items only to authenticated users
                 if (item.auth && !session) return false;
-                // Show admin items only to authenticated users (you can add role check here)
-                if (item.admin && !session) return false;
+                // Show admin items only to admin users
+                if (item.admin && (!session || !session.user?.isAdmin)) return false;
                 return true;
               })
               .map((item) => (
@@ -78,13 +69,19 @@ export function Navbar() {
                 </Button>
               </div>
             ) : (
-              <Button onClick={handleSignOut} variant="outline">
-                Đăng xuất
-              </Button>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">
+                  Xin chào, {session.user?.email}
+                  {session.user?.isAdmin && " (Admin)"}
+                </span>
+                <Button onClick={handleSignOut} variant="outline">
+                  Đăng xuất
+                </Button>
+              </div>
             )}
           </nav>
         </div>
       </div>
     </nav>
   );
-} 
+}
