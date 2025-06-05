@@ -36,20 +36,20 @@ services:
 
   # Neo4j service
   neo4j:
-    image: neo4j:5.15.0
-    container_name: neo4j
-    restart: unless-stopped
+    image: neo4j:5.15-community
+    container_name: neo4j-apoc
     environment:
-      NEO4J_AUTH: neo4j/password
-      NEO4J_dbms_memory_pagecache_size: 1G
-      NEO4J_dbms_memory_heap_initial__size: 1G
-      NEO4J_dbms_memory_heap_max__size: 1G
+      - NEO4J_AUTH=neo4j/neo4j_pass
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
+      - "7474:7474"
+      - "7687:7687"
     volumes:
-      - neo4j-data:/data
-      - neo4j-logs:/logs
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_plugins:/plugins
 
   # ChromaDB service
   chroma:
@@ -90,6 +90,8 @@ services:
 
 volumes:
   supabase-db-data:
-  neo4j-data:
-  neo4j-logs:
-  chroma-data: 
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
+  chroma-data:
