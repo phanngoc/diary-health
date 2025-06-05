@@ -28,7 +28,6 @@ class FinancialNewsSpider(scrapy.Spider):
     
     def __init__(self, *args, **kwargs):
         super(FinancialNewsSpider, self).__init__(*args, **kwargs)
-        self.logger = logging.getLogger(self.name)
         self.start_time = datetime.now()
         self.scraped_articles = 0
         self.failed_articles = 0
@@ -171,7 +170,7 @@ class FinancialNewsSpider(scrapy.Spider):
         processed_urls = set()
         valid_articles = 0
         
-        for link in article_links[:20]:  # Limit to 20 articles per site
+        for link in article_links:  # Limit to 20 articles per site
             url = link.css('::attr(href)').get()
             if not url:
                 continue
@@ -215,31 +214,30 @@ class FinancialNewsSpider(scrapy.Spider):
     def is_article_url(self, url, domain):
         """Check if URL looks like an article URL"""
         # Keywords that indicate article URLs
-        article_keywords = [
-            'news', 'bai-viet', 'tin-tuc', 'article', 'detail',
-            'chung-khoan', 'tai-chinh', 'kinh-te', 'doanh-nghiep',
-            'market', 'stock', 'finance', 'economy', 'business'
-        ]
+        # article_keywords = [
+        #     'news', 'bai-viet', 'tin-tuc', 'article', 'detail',
+        #     'chung-khoan', 'tai-chinh', 'kinh-te', 'doanh-nghiep',
+        #     'market', 'stock', 'finance', 'economy', 'business'
+        # ]
         
-        # Exclude URLs that are likely not articles
-        exclude_keywords = [
-            'tag', 'category', 'author', 'search', 'page',
-            'login', 'register', 'contact', 'about',
-            '.jpg', '.png', '.gif', '.pdf', '.doc'
-        ]
+        # # Exclude URLs that are likely not articles
+        # exclude_keywords = [
+        #     'tag', 'category', 'author', 'search', 'page',
+        #     'login', 'register', 'contact', 'about',
+        #     '.jpg', '.png', '.gif', '.pdf', '.doc'
+        # ]
         
-        url_lower = url.lower()
+        # url_lower = url.lower()
         
-        # Check for exclude keywords first
-        if any(keyword in url_lower for keyword in exclude_keywords):
-            return False
+        # # Check for exclude keywords first
+        # if any(keyword in url_lower for keyword in exclude_keywords):
+        #     return False
             
-        # Check for article keywords or date patterns
-        has_article_keyword = any(keyword in url_lower for keyword in article_keywords)
-        has_date_pattern = re.search(r'/\d{4}/', url) or re.search(r'/\d{6}/', url)
+        # # Check for article keywords or date patterns
+        # has_article_keyword = any(keyword in url_lower for keyword in article_keywords)
+        # has_date_pattern = re.search(r'/\d{4}/', url) or re.search(r'/\d{6}/', url)
         
-        return has_article_keyword or has_date_pattern
-
+        return True
     def parse_article(self, response):
         """Parse individual article page"""
         domain = response.meta['domain']

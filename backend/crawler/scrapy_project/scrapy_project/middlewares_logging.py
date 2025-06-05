@@ -95,8 +95,21 @@ class StatsLoggingMiddleware:
             # Calculate runtime
             start_time = stats.get('start_time')
             if start_time:
-                runtime = (datetime.now() - start_time).total_seconds()
-                runtime_str = f"{runtime:.1f}s"
+                try:
+                    # Handle different types of start_time
+                    if isinstance(start_time, datetime):
+                        runtime = (datetime.now() - start_time).total_seconds()
+                    elif isinstance(start_time, (int, float)):
+                        # If it's a timestamp
+                        runtime = datetime.now().timestamp() - start_time
+                    else:
+                        # Try to convert to datetime if it's a string or other format
+                        start_time_dt = datetime.fromisoformat(str(start_time))
+                        runtime = (datetime.now() - start_time_dt).total_seconds()
+                    
+                    runtime_str = f"{runtime:.1f}s"
+                except (ValueError, TypeError, AttributeError):
+                    runtime_str = "unknown"
             else:
                 runtime_str = "unknown"
             
